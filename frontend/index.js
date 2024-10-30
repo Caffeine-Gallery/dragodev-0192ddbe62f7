@@ -66,6 +66,26 @@ function handleElementDragStart(e) {
 function handleDragOver(e) {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
+    const afterElement = getDragAfterElement(e.clientY);
+    const draggable = document.querySelector('.dragging');
+    if (afterElement == null) {
+        e.target.appendChild(draggable);
+    } else {
+        e.target.insertBefore(draggable, afterElement);
+    }
+}
+
+function getDragAfterElement(y) {
+    const draggableElements = [...document.querySelectorAll('.element:not(.dragging)')];
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
 
 function handleDrop(e) {
@@ -79,10 +99,6 @@ function handleDrop(e) {
 }
 
 function handleComponentDrop(e) {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const y = e.clientY - rect.top;
-    let insertIndex = Math.floor(y / 50);
-
     const newElement = {
         id: `${draggedItem.id}-${Date.now()}`,
         elementType: draggedItem.id,
@@ -100,21 +116,22 @@ function handleComponentDrop(e) {
         }
     };
 
-    elements.splice(insertIndex, 0, newElement);
+    const afterElement = getDragAfterElement(e.clientY);
+    const index = afterElement ? elements.findIndex(el => el.id === afterElement.dataset.elementId) : elements.length;
+    elements.splice(index, 0, newElement);
     addToHistory(elements);
     renderElements();
 }
 
 function handleElementDrop(e) {
     const elementId = e.dataTransfer.getData('text');
-    const rect = e.currentTarget.getBoundingClientRect();
-    const y = e.clientY - rect.top;
-    let insertIndex = Math.floor(y / 50);
+    const afterElement = getDragAfterElement(e.clientY);
+    const draggedIndex = elements.findIndex(el => el.id === elementId);
+    const dropIndex = afterElement ? elements.findIndex(el => el.id === afterElement.dataset.elementId) : elements.length;
 
-    const elementIndex = elements.findIndex(el => el.id === elementId);
-    if (elementIndex !== -1) {
-        const [movedElement] = elements.splice(elementIndex, 1);
-        elements.splice(insertIndex, 0, movedElement);
+    if (draggedIndex !== -1) {
+        const [movedElement] = elements.splice(draggedIndex, 1);
+        elements.splice(dropIndex > draggedIndex ? dropIndex - 1 : dropIndex, 0, movedElement);
         addToHistory(elements);
         renderElements();
     }
@@ -132,7 +149,13 @@ function renderElements() {
         elementDiv.innerHTML = renderElementContent(element);
         elementDiv.onclick = () => selectElement(element);
         elementDiv.ondragstart = handleElementDragStart;
-        elementDiv.ondragend = (e) => e.target.style.opacity = '1';
+        elementDiv.ondragend = (e) => {
+            e.target.style.opacity = '1';
+            e.target.classList.remove('dragging');
+        };
+        elementDiv.ondrag = (e) => {
+            e.target.classList.add('dragging');
+        };
 
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'btn btn-sm btn-danger position-absolute top-0 end-0';

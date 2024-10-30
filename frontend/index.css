@@ -20,6 +20,12 @@ body {
     outline: 2px solid #007bff;
 }
 
+.element.dragging {
+    opacity: 0.5;
+    position: absolute;
+    z-index: 1000;
+}
+
 #canvas {
     min-height: 500px;
     transition: max-width 0.3s ease;
