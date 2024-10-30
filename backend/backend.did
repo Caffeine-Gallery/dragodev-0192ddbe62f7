@@ -1,0 +1,16 @@
+type Website = vec Element;
+type Element = 
+ record {
+   content: text;
+   elementType: text;
+   id: text;
+   styles: vec record {
+                 text;
+                 text;
+               };
+ };
+service : {
+  getWebsite: (nat) -> (opt Website) query;
+  getWebsites: () -> (vec Website) query;
+  saveWebsite: (Website) -> ();
+}
