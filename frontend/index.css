@@ -13,6 +13,7 @@ body {
 
 .element {
     position: relative;
+    cursor: move;
 }
 
 .element:hover {
@@ -31,4 +32,11 @@ body {
 
 #styleEditor.show {
     transform: translateX(0);
+}
+
+.element-placeholder {
+    border: 2px dashed #007bff;
+    margin: 5px 0;
+    padding: 10px;
+    background-color: rgba(0, 123, 255, 0.1);
 }

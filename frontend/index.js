@@ -44,7 +44,7 @@ function setupEventListeners() {
     const desktopViewBtn = document.getElementById('desktopViewBtn');
     const mobileViewBtn = document.getElementById('mobileViewBtn');
 
-    componentList.addEventListener('dragstart', handleDragStart);
+    componentList.addEventListener('dragstart', handleComponentDragStart);
     canvas.addEventListener('dragover', handleDragOver);
     canvas.addEventListener('drop', handleDrop);
     undoBtn.addEventListener('click', undo);
@@ -53,42 +53,70 @@ function setupEventListeners() {
     mobileViewBtn.addEventListener('click', () => setViewMode('mobile'));
 }
 
-function handleDragStart(e) {
-    draggedItem = e.target.dataset.componentId;
+function handleComponentDragStart(e) {
+    draggedItem = { type: 'component', id: e.target.dataset.componentId };
+}
+
+function handleElementDragStart(e) {
+    draggedItem = { type: 'element', id: e.target.dataset.elementId };
+    e.dataTransfer.setData('text/plain', e.target.dataset.elementId);
+    e.target.style.opacity = '0.5';
 }
 
 function handleDragOver(e) {
     e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
 }
 
 function handleDrop(e) {
     e.preventDefault();
-    if (draggedItem) {
-        const rect = e.currentTarget.getBoundingClientRect();
-        const y = e.clientY - rect.top;
-        let insertIndex = Math.floor(y / 50);
+    if (draggedItem.type === 'component') {
+        handleComponentDrop(e);
+    } else if (draggedItem.type === 'element') {
+        handleElementDrop(e);
+    }
+    draggedItem = null;
+}
 
-        const newElement = {
-            id: `${draggedItem}-${Date.now()}`,
-            elementType: draggedItem,
-            content: `New ${draggedItem}`,
-            styles: {
-                width: '100%',
-                fontSize: '16px',
-                color: '#000000',
-                backgroundColor: '#ffffff',
-                padding: '16px',
-                textAlign: 'left',
-                fontWeight: 'normal',
-                fontStyle: 'normal',
-                textDecoration: 'none'
-            }
-        };
+function handleComponentDrop(e) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const y = e.clientY - rect.top;
+    let insertIndex = Math.floor(y / 50);
 
-        elements.splice(insertIndex, 0, newElement);
+    const newElement = {
+        id: `${draggedItem.id}-${Date.now()}`,
+        elementType: draggedItem.id,
+        content: `New ${draggedItem.id}`,
+        styles: {
+            width: '100%',
+            fontSize: '16px',
+            color: '#000000',
+            backgroundColor: '#ffffff',
+            padding: '16px',
+            textAlign: 'left',
+            fontWeight: 'normal',
+            fontStyle: 'normal',
+            textDecoration: 'none'
+        }
+    };
+
+    elements.splice(insertIndex, 0, newElement);
+    addToHistory(elements);
+    renderElements();
+}
+
+function handleElementDrop(e) {
+    const elementId = e.dataTransfer.getData('text');
+    const rect = e.currentTarget.getBoundingClientRect();
+    const y = e.clientY - rect.top;
+    let insertIndex = Math.floor(y / 50);
+
+    const elementIndex = elements.findIndex(el => el.id === elementId);
+    if (elementIndex !== -1) {
+        const [movedElement] = elements.splice(elementIndex, 1);
+        elements.splice(insertIndex, 0, movedElement);
         addToHistory(elements);
         renderElements();
-        draggedItem = null;
     }
 }
 
@@ -98,9 +126,13 @@ function renderElements() {
     elements.forEach(element => {
         const elementDiv = document.createElement('div');
         elementDiv.className = 'element mb-3 position-relative';
+        elementDiv.draggable = true;
+        elementDiv.dataset.elementId = element.id;
         elementDiv.style.cssText = Object.entries(element.styles).map(([key, value]) => `${key}: ${value}`).join(';');
         elementDiv.innerHTML = renderElementContent(element);
         elementDiv.onclick = () => selectElement(element);
+        elementDiv.ondragstart = handleElementDragStart;
+        elementDiv.ondragend = (e) => e.target.style.opacity = '1';
 
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'btn btn-sm btn-danger position-absolute top-0 end-0';
