@@ -1,7 +1,18 @@
 export const idlFactory = ({ IDL }) => {
+  const ElementStyle = IDL.Record({
+    'backgroundColor' : IDL.Text,
+    'textDecoration' : IDL.Text,
+    'fontStyle' : IDL.Text,
+    'color' : IDL.Text,
+    'fontWeight' : IDL.Text,
+    'textAlign' : IDL.Text,
+    'width' : IDL.Text,
+    'fontSize' : IDL.Text,
+    'padding' : IDL.Text,
+  });
   const Element = IDL.Record({
     'id' : IDL.Text,
-    'styles' : IDL.Vec(IDL.Tuple(IDL.Text, IDL.Text)),
+    'styles' : ElementStyle,
     'content' : IDL.Text,
     'elementType' : IDL.Text,
   });

@@ -21,4 +21,14 @@ body {
 
 #canvas {
     min-height: 500px;
+    transition: max-width 0.3s ease;
+}
+
+#styleEditor {
+    transition: transform 0.3s ease;
+    transform: translateX(100%);
+}
+
+#styleEditor.show {
+    transform: translateX(0);
 }

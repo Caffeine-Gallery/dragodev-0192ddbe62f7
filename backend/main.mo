@@ -4,11 +4,23 @@ import Array "mo:base/Array";
 import Text "mo:base/Text";
 
 actor WebsiteBuilder {
+    type ElementStyle = {
+        width : Text;
+        fontSize : Text;
+        color : Text;
+        backgroundColor : Text;
+        padding : Text;
+        textAlign : Text;
+        fontWeight : Text;
+        fontStyle : Text;
+        textDecoration : Text;
+    };
+
     type Element = {
         id : Text;
         elementType : Text;
         content : Text;
-        styles : [(Text, Text)];
+        styles : ElementStyle;
     };
 
     type Website = [Element];

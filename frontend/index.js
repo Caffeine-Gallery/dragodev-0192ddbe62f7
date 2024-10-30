@@ -1,17 +1,23 @@
 import { backend } from 'declarations/backend';
 
 const components = [
-    { id: 'heading', name: 'Heading', category: 'Basic' },
-    { id: 'paragraph', name: 'Text Block', category: 'Basic' },
-    { id: 'image', name: 'Image', category: 'Basic' },
-    { id: 'button', name: 'Button', category: 'Basic' },
-    { id: 'columns', name: '2 Columns', category: 'Layout' },
-    { id: 'contactForm', name: 'Contact Form', category: 'Forms' },
+    { id: 'heading', name: 'Heading', icon: 'type' },
+    { id: 'paragraph', name: 'Text Block', icon: 'text-paragraph' },
+    { id: 'image', name: 'Image', icon: 'image' },
+    { id: 'button', name: 'Button', icon: 'square' },
+    { id: 'divider', name: 'Divider', icon: 'hr' },
+    { id: 'columns', name: '2 Columns', icon: 'layout-split' },
+    { id: 'video', name: 'Video', icon: 'youtube' },
+    { id: 'contactForm', name: 'Contact Form', icon: 'envelope' },
+    { id: 'socialLinks', name: 'Social Links', icon: 'share' }
 ];
 
 let elements = [];
 let draggedItem = null;
 let selectedElement = null;
+let history = [[]];
+let historyIndex = 0;
+let viewMode = 'desktop';
 
 function initializeBuilder() {
     renderComponentList();
@@ -20,33 +26,31 @@ function initializeBuilder() {
 
 function renderComponentList() {
     const componentList = document.getElementById('componentList');
-    const categories = [...new Set(components.map(c => c.category))];
-
-    categories.forEach(category => {
-        const categoryDiv = document.createElement('div');
-        categoryDiv.innerHTML = `<h3 class="mt-3">${category}</h3>`;
-        
-        const categoryComponents = components.filter(c => c.category === category);
-        categoryComponents.forEach(component => {
-            const componentDiv = document.createElement('div');
-            componentDiv.className = 'component p-2 mb-2 bg-white rounded shadow-sm';
-            componentDiv.draggable = true;
-            componentDiv.innerHTML = component.name;
-            componentDiv.dataset.componentId = component.id;
-            categoryDiv.appendChild(componentDiv);
-        });
-
-        componentList.appendChild(categoryDiv);
+    components.forEach(component => {
+        const componentDiv = document.createElement('div');
+        componentDiv.className = 'component p-2 mb-2 bg-white rounded shadow-sm';
+        componentDiv.draggable = true;
+        componentDiv.innerHTML = `<i class="bi bi-${component.icon} me-2"></i>${component.name}`;
+        componentDiv.dataset.componentId = component.id;
+        componentList.appendChild(componentDiv);
     });
 }
 
 function setupEventListeners() {
     const componentList = document.getElementById('componentList');
     const canvas = document.getElementById('canvas');
+    const undoBtn = document.getElementById('undoBtn');
+    const redoBtn = document.getElementById('redoBtn');
+    const desktopViewBtn = document.getElementById('desktopViewBtn');
+    const mobileViewBtn = document.getElementById('mobileViewBtn');
 
     componentList.addEventListener('dragstart', handleDragStart);
     canvas.addEventListener('dragover', handleDragOver);
     canvas.addEventListener('drop', handleDrop);
+    undoBtn.addEventListener('click', undo);
+    redoBtn.addEventListener('click', redo);
+    desktopViewBtn.addEventListener('click', () => setViewMode('desktop'));
+    mobileViewBtn.addEventListener('click', () => setViewMode('mobile'));
 }
 
 function handleDragStart(e) {
@@ -70,14 +74,19 @@ function handleDrop(e) {
             content: `New ${draggedItem}`,
             styles: {
                 width: '100%',
-                padding: '10px',
-                margin: '5px 0',
-                border: '1px solid #ccc',
-                borderRadius: '4px'
+                fontSize: '16px',
+                color: '#000000',
+                backgroundColor: '#ffffff',
+                padding: '16px',
+                textAlign: 'left',
+                fontWeight: 'normal',
+                fontStyle: 'normal',
+                textDecoration: 'none'
             }
         };
 
         elements.splice(insertIndex, 0, newElement);
+        addToHistory(elements);
         renderElements();
         draggedItem = null;
     }
@@ -88,10 +97,20 @@ function renderElements() {
     canvas.innerHTML = '';
     elements.forEach(element => {
         const elementDiv = document.createElement('div');
-        elementDiv.className = 'element';
+        elementDiv.className = 'element mb-3 position-relative';
         elementDiv.style.cssText = Object.entries(element.styles).map(([key, value]) => `${key}: ${value}`).join(';');
         elementDiv.innerHTML = renderElementContent(element);
         elementDiv.onclick = () => selectElement(element);
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'btn btn-sm btn-danger position-absolute top-0 end-0';
+        deleteBtn.innerHTML = '<i class="bi bi-trash"></i>';
+        deleteBtn.onclick = (e) => {
+            e.stopPropagation();
+            deleteElement(element.id);
+        };
+
+        elementDiv.appendChild(deleteBtn);
         canvas.appendChild(elementDiv);
     });
 }
@@ -99,15 +118,19 @@ function renderElements() {
 function renderElementContent(element) {
     switch (element.elementType) {
         case 'heading':
-            return `<h2>${element.content}</h2>`;
+            return `<h2 contenteditable="true">${element.content}</h2>`;
         case 'paragraph':
-            return `<p>${element.content}</p>`;
+            return `<p contenteditable="true">${element.content}</p>`;
         case 'image':
             return `<img src="https://via.placeholder.com/300x200" alt="Placeholder" style="max-width: 100%;">`;
         case 'button':
             return `<button class="btn btn-primary">${element.content}</button>`;
+        case 'divider':
+            return `<hr>`;
         case 'columns':
             return `<div class="row"><div class="col">Column 1</div><div class="col">Column 2</div></div>`;
+        case 'video':
+            return `<div class="ratio ratio-16x9"><iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" allowfullscreen></iframe></div>`;
         case 'contactForm':
             return `
                 <form>
@@ -123,6 +146,14 @@ function renderElementContent(element) {
                     <button type="submit" class="btn btn-primary">Send</button>
                 </form>
             `;
+        case 'socialLinks':
+            return `
+                <div class="d-flex gap-3">
+                    <i class="bi bi-facebook fs-4"></i>
+                    <i class="bi bi-twitter fs-4"></i>
+                    <i class="bi bi-instagram fs-4"></i>
+                </div>
+            `;
         default:
             return '';
     }
@@ -130,8 +161,91 @@ function renderElementContent(element) {
 
 function selectElement(element) {
     selectedElement = element;
-    // Here you would typically show some UI for editing the selected element
-    console.log('Selected element:', element);
+    showStyleEditor();
+}
+
+function showStyleEditor() {
+    const styleEditor = document.getElementById('styleEditor');
+    const styleOptions = document.getElementById('styleOptions');
+    styleEditor.style.display = 'block';
+    styleOptions.innerHTML = `
+        <div class="mb-3">
+            <label>Text Alignment</label>
+            <div class="btn-group" role="group">
+                <button class="btn btn-outline-secondary" onclick="updateElementStyle('textAlign', 'left')"><i class="bi bi-text-left"></i></button>
+                <button class="btn btn-outline-secondary" onclick="updateElementStyle('textAlign', 'center')"><i class="bi bi-text-center"></i></button>
+                <button class="btn btn-outline-secondary" onclick="updateElementStyle('textAlign', 'right')"><i class="bi bi-text-right"></i></button>
+            </div>
+        </div>
+        <div class="mb-3">
+            <label>Text Color</label>
+            <input type="color" class="form-control" value="${selectedElement.styles.color}" onchange="updateElementStyle('color', this.value)">
+        </div>
+        <div class="mb-3">
+            <label>Background Color</label>
+            <input type="color" class="form-control" value="${selectedElement.styles.backgroundColor}" onchange="updateElementStyle('backgroundColor', this.value)">
+        </div>
+        <div class="mb-3">
+            <label>Padding</label>
+            <input type="range" class="form-range" min="0" max="48" value="${parseInt(selectedElement.styles.padding)}" onchange="updateElementStyle('padding', this.value + 'px')">
+        </div>
+    `;
+}
+
+function updateElementStyle(property, value) {
+    if (selectedElement) {
+        selectedElement.styles[property] = value;
+        addToHistory(elements);
+        renderElements();
+    }
+}
+
+function deleteElement(elementId) {
+    elements = elements.filter(el => el.id !== elementId);
+    addToHistory(elements);
+    renderElements();
+}
+
+function addToHistory(newElements) {
+    history = history.slice(0, historyIndex + 1);
+    history.push(JSON.parse(JSON.stringify(newElements)));
+    historyIndex = history.length - 1;
+    updateUndoRedoButtons();
+}
+
+function undo() {
+    if (historyIndex > 0) {
+        historyIndex--;
+        elements = JSON.parse(JSON.stringify(history[historyIndex]));
+        renderElements();
+        updateUndoRedoButtons();
+    }
+}
+
+function redo() {
+    if (historyIndex < history.length - 1) {
+        historyIndex++;
+        elements = JSON.parse(JSON.stringify(history[historyIndex]));
+        renderElements();
+        updateUndoRedoButtons();
+    }
+}
+
+function updateUndoRedoButtons() {
+    document.getElementById('undoBtn').disabled = historyIndex === 0;
+    document.getElementById('redoBtn').disabled = historyIndex === history.length - 1;
+}
+
+function setViewMode(mode) {
+    viewMode = mode;
+    const canvas = document.getElementById('canvas');
+    if (mode === 'mobile') {
+        canvas.style.maxWidth = '375px';
+        canvas.style.margin = '0 auto';
+    } else {
+        canvas.style.maxWidth = '100%';
+        canvas.style.margin = '0';
+    }
 }
 
 async function saveWebsite() {
@@ -146,5 +260,6 @@ async function saveWebsite() {
 
 window.addEventListener('load', initializeBuilder);
 
-// Expose saveWebsite function globally
+// Expose functions globally
+window.updateElementStyle = updateElementStyle;
 window.saveWebsite = saveWebsite;

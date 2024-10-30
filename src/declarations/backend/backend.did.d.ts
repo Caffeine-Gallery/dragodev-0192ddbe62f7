@@ -4,9 +4,20 @@ import type { IDL } from '@dfinity/candid';
 
 export interface Element {
   'id' : string,
-  'styles' : Array<[string, string]>,
+  'styles' : ElementStyle,
   'content' : string,
   'elementType' : string,
+}
+export interface ElementStyle {
+  'backgroundColor' : string,
+  'textDecoration' : string,
+  'fontStyle' : string,
+  'color' : string,
+  'fontWeight' : string,
+  'textAlign' : string,
+  'width' : string,
+  'fontSize' : string,
+  'padding' : string,
 }
 export type Website = Array<Element>;
 export interface _SERVICE {

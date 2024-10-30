@@ -1,13 +1,22 @@
 type Website = vec Element;
+type ElementStyle = 
+ record {
+   backgroundColor: text;
+   color: text;
+   fontSize: text;
+   fontStyle: text;
+   fontWeight: text;
+   padding: text;
+   textAlign: text;
+   textDecoration: text;
+   width: text;
+ };
 type Element = 
  record {
    content: text;
    elementType: text;
    id: text;
-   styles: vec record {
-                 text;
-                 text;
-               };
+   styles: ElementStyle;
  };
 service : {
   getWebsite: (nat) -> (opt Website) query;
