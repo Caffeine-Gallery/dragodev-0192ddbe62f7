@@ -9,14 +9,19 @@ const components = [
     { id: 'columns', name: '2 Columns', icon: 'layout-split' },
     { id: 'video', name: 'Video', icon: 'youtube' },
     { id: 'contactForm', name: 'Contact Form', icon: 'envelope' },
-    { id: 'socialLinks', name: 'Social Links', icon: 'share' }
+    { id: 'socialLinks', name: 'Social Links', icon: 'share' },
+    { id: 'slider', name: 'Slider', icon: 'sliders' },
+    { id: 'accordion', name: 'Accordion', icon: 'list' },
+    { id: 'tabs', name: 'Tabs', icon: 'folder' },
+    { id: 'map', name: 'Map', icon: 'map' },
+    { id: 'countdown', name: 'Countdown', icon: 'clock' },
 ];
 
-let elements = [];
+let website = null;
 let draggedItem = null;
 let selectedElement = null;
-let history = [[]];
-let historyIndex = 0;
+let history = [];
+let historyIndex = -1;
 let viewMode = 'desktop';
 
 async function initializeBuilder() {
@@ -27,13 +32,13 @@ async function initializeBuilder() {
 
 async function loadDefaultTemplate() {
     try {
-        const defaultTemplate = await backend.getDefaultTemplate();
-        elements = defaultTemplate;
-        addToHistory(elements);
-        renderElements();
+        website = await backend.getDefaultTemplate();
+        addToHistory(website);
+        renderWebsite();
     } catch (error) {
         console.error('Error loading default template:', error);
         alert('Failed to load default template. Starting with an empty canvas.');
+        website = { elements: [], colorScheme: 'default' };
     }
 }
 
@@ -57,6 +62,7 @@ function setupEventListeners() {
     const desktopViewBtn = document.getElementById('desktopViewBtn');
     const mobileViewBtn = document.getElementById('mobileViewBtn');
     const resetBtn = document.getElementById('resetBtn');
+    const colorSchemeSelect = document.getElementById('colorSchemeSelect');
 
     componentList.addEventListener('dragstart', handleComponentDragStart);
     canvas.addEventListener('dragover', handleDragOver);
@@ -66,6 +72,7 @@ function setupEventListeners() {
     desktopViewBtn.addEventListener('click', () => setViewMode('desktop'));
     mobileViewBtn.addEventListener('click', () => setViewMode('mobile'));
     resetBtn.addEventListener('click', loadDefaultTemplate);
+    colorSchemeSelect.addEventListener('change', changeColorScheme);
 }
 
 function handleComponentDragStart(e) {
@@ -114,75 +121,163 @@ function handleDrop(e) {
 }
 
 function handleComponentDrop(e) {
-    const newElement = {
-        id: `${draggedItem.id}-${Date.now()}`,
-        elementType: draggedItem.id,
-        content: `New ${draggedItem.id}`,
-        styles: {
-            width: '100%',
-            fontSize: '16px',
-            color: '#000000',
-            backgroundColor: '#ffffff',
-            padding: '16px',
-            textAlign: 'left',
-            fontWeight: 'normal',
-            fontStyle: 'normal',
-            textDecoration: 'none'
-        }
-    };
-
+    const newElement = createNewElement(draggedItem.id);
     const afterElement = getDragAfterElement(e.clientY);
-    const index = afterElement ? elements.findIndex(el => el.id === afterElement.dataset.elementId) : elements.length;
-    elements.splice(index, 0, newElement);
-    addToHistory(elements);
-    renderElements();
+    const parentElement = getParentElement(e.target);
+    
+    if (parentElement) {
+        const index = afterElement ? 
+            parentElement.children.findIndex(el => el.id === afterElement.dataset.elementId) :
+            parentElement.children.length;
+        parentElement.children.splice(index, 0, newElement);
+    } else {
+        const index = afterElement ?
+            website.elements.findIndex(el => el.id === afterElement.dataset.elementId) :
+            website.elements.length;
+        website.elements.splice(index, 0, newElement);
+    }
+
+    addToHistory(website);
+    renderWebsite();
 }
 
 function handleElementDrop(e) {
     const elementId = e.dataTransfer.getData('text');
     const afterElement = getDragAfterElement(e.clientY);
-    const draggedIndex = elements.findIndex(el => el.id === elementId);
-    const dropIndex = afterElement ? elements.findIndex(el => el.id === afterElement.dataset.elementId) : elements.length;
+    const parentElement = getParentElement(e.target);
+    
+    let draggedElement;
+    let draggedElementIndex;
 
-    if (draggedIndex !== -1) {
-        const [movedElement] = elements.splice(draggedIndex, 1);
-        elements.splice(dropIndex > draggedIndex ? dropIndex - 1 : dropIndex, 0, movedElement);
-        addToHistory(elements);
-        renderElements();
+    if (parentElement) {
+        draggedElementIndex = parentElement.children.findIndex(el => el.id === elementId);
+        if (draggedElementIndex !== -1) {
+            [draggedElement] = parentElement.children.splice(draggedElementIndex, 1);
+        }
+    } else {
+        draggedElementIndex = website.elements.findIndex(el => el.id === elementId);
+        if (draggedElementIndex !== -1) {
+            [draggedElement] = website.elements.splice(draggedElementIndex, 1);
+        }
+    }
+
+    if (draggedElement) {
+        if (parentElement) {
+            const index = afterElement ? 
+                parentElement.children.findIndex(el => el.id === afterElement.dataset.elementId) :
+                parentElement.children.length;
+            parentElement.children.splice(index, 0, draggedElement);
+        } else {
+            const index = afterElement ?
+                website.elements.findIndex(el => el.id === afterElement.dataset.elementId) :
+                website.elements.length;
+            website.elements.splice(index, 0, draggedElement);
+        }
+
+        addToHistory(website);
+        renderWebsite();
     }
 }
 
-function renderElements() {
+function getParentElement(target) {
+    let current = target;
+    while (current !== null) {
+        if (current.classList && current.classList.contains('element') && current.dataset.elementId) {
+            return findElementById(website.elements, current.dataset.elementId);
+        }
+        current = current.parentElement;
+    }
+    return null;
+}
+
+function findElementById(elements, id) {
+    for (let element of elements) {
+        if (element.id === id) {
+            return element;
+        }
+        if (element.children && element.children.length > 0) {
+            const found = findElementById(element.children, id);
+            if (found) {
+                return found;
+            }
+        }
+    }
+    return null;
+}
+
+function createNewElement(elementType) {
+    return {
+        id: `${elementType}-${Date.now()}`,
+        elementType: elementType,
+        content: `New ${elementType}`,
+        styles: {
+            width: '100%',
+            height: 'auto',
+            fontSize: '16px',
+            color: '#000000',
+            backgroundColor: '#ffffff',
+            padding: '16px',
+            margin: '0',
+            textAlign: 'left',
+            fontWeight: 'normal',
+            fontStyle: 'normal',
+            textDecoration: 'none',
+            borderRadius: '0',
+            boxShadow: 'none'
+        },
+        children: []
+    };
+}
+
+function renderWebsite() {
     const canvas = document.getElementById('canvas');
     canvas.innerHTML = '';
-    elements.forEach(element => {
-        const elementDiv = document.createElement('div');
-        elementDiv.className = 'element mb-3 position-relative';
-        elementDiv.draggable = true;
-        elementDiv.dataset.elementId = element.id;
-        elementDiv.style.cssText = Object.entries(element.styles).map(([key, value]) => `${key}: ${value}`).join(';');
-        elementDiv.innerHTML = renderElementContent(element);
-        elementDiv.onclick = () => selectElement(element);
-        elementDiv.ondragstart = handleElementDragStart;
-        elementDiv.ondragend = (e) => {
-            e.target.style.opacity = '1';
-            e.target.classList.remove('dragging');
-        };
-        elementDiv.ondrag = (e) => {
-            e.target.classList.add('dragging');
-        };
-
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'btn btn-sm btn-danger position-absolute top-0 end-0';
-        deleteBtn.innerHTML = '<i class="bi bi-trash"></i>';
-        deleteBtn.onclick = (e) => {
-            e.stopPropagation();
-            deleteElement(element.id);
-        };
-
-        elementDiv.appendChild(deleteBtn);
-        canvas.appendChild(elementDiv);
+    website.elements.forEach(element => {
+        canvas.appendChild(renderElement(element));
     });
+    updateUndoRedoButtons();
+}
+
+function renderElement(element) {
+    const elementDiv = document.createElement('div');
+    elementDiv.className = 'element mb-3 position-relative';
+    elementDiv.draggable = true;
+    elementDiv.dataset.elementId = element.id;
+    elementDiv.style.cssText = Object.entries(element.styles).map(([key, value]) => `${key}: ${value}`).join(';');
+    elementDiv.innerHTML = renderElementContent(element);
+    elementDiv.onclick = (e) => {
+        e.stopPropagation();
+        selectElement(element);
+    };
+    elementDiv.ondragstart = handleElementDragStart;
+    elementDiv.ondragend = (e) => {
+        e.target.style.opacity = '1';
+        e.target.classList.remove('dragging');
+    };
+    elementDiv.ondrag = (e) => {
+        e.target.classList.add('dragging');
+    };
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'btn btn-sm btn-danger position-absolute top-0 end-0';
+    deleteBtn.innerHTML = '<i class="bi bi-trash"></i>';
+    deleteBtn.onclick = (e) => {
+        e.stopPropagation();
+        deleteElement(element.id);
+    };
+
+    elementDiv.appendChild(deleteBtn);
+
+    if (element.children && element.children.length > 0) {
+        const childrenContainer = document.createElement('div');
+        childrenContainer.className = 'children-container';
+        element.children.forEach(child => {
+            childrenContainer.appendChild(renderElement(child));
+        });
+        elementDiv.appendChild(childrenContainer);
+    }
+
+    return elementDiv;
 }
 
 function renderElementContent(element) {
@@ -200,7 +295,7 @@ function renderElementContent(element) {
         case 'columns':
             return `<div class="row"><div class="col">Column 1</div><div class="col">Column 2</div></div>`;
         case 'video':
-            return `<div class="ratio ratio-16x9"><iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" allowfullscreen></iframe></div>`;
+            return `<div class="ratio ratio-16x9"><iframe src="${element.content}" allowfullscreen></iframe></div>`;
         case 'contactForm':
             return `
                 <form>
@@ -224,6 +319,52 @@ function renderElementContent(element) {
                     <i class="bi bi-instagram fs-4"></i>
                 </div>
             `;
+        case 'slider':
+            return `<div class="carousel slide" data-bs-ride="carousel">
+                        <div class="carousel-inner">
+                            <div class="carousel-item active">
+                                <img src="https://via.placeholder.com/800x400?text=Slide+1" class="d-block w-100" alt="Slide 1">
+                            </div>
+                            <div class="carousel-item">
+                                <img src="https://via.placeholder.com/800x400?text=Slide+2" class="d-block w-100" alt="Slide 2">
+                            </div>
+                            <div class="carousel-item">
+                                <img src="https://via.placeholder.com/800x400?text=Slide+3" class="d-block w-100" alt="Slide 3">
+                            </div>
+                        </div>
+                    </div>`;
+        case 'accordion':
+            return `<div class="accordion" id="accordionExample">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">
+                                    Accordion Item #1
+                                </button>
+                            </h2>
+                            <div id="collapseOne" class="accordion-collapse collapse show" data-bs-parent="#accordionExample">
+                                <div class="accordion-body">
+                                    Content for accordion item #1
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+        case 'tabs':
+            return `<ul class="nav nav-tabs" id="myTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="home-tab" data-bs-toggle="tab" data-bs-target="#home" type="button" role="tab">Home</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab">Profile</button>
+                        </li>
+                    </ul>
+                    <div class="tab-content" id="myTabContent">
+                        <div class="tab-pane fade show active" id="home" role="tabpanel">Home content</div>
+                        <div class="tab-pane fade" id="profile" role="tabpanel">Profile content</div>
+                    </div>`;
+        case 'map':
+            return `<div id="map" style="height: 400px;">Map placeholder</div>`;
+        case 'countdown':
+            return `<div class="countdown">Countdown placeholder</div>`;
         default:
             return '';
     }
@@ -259,26 +400,53 @@ function showStyleEditor() {
             <label>Padding</label>
             <input type="range" class="form-range" min="0" max="48" value="${parseInt(selectedElement.styles.padding)}" onchange="updateElementStyle('padding', this.value + 'px')">
         </div>
+        <div class="mb-3">
+            <label>Font Size</label>
+            <input type="range" class="form-range" min="8" max="72" value="${parseInt(selectedElement.styles.fontSize)}" onchange="updateElementStyle('fontSize', this.value + 'px')">
+        </div>
+        <div class="mb-3">
+            <label>Font Weight</label>
+            <select class="form-select" onchange="updateElementStyle('fontWeight', this.value)">
+                <option value="normal" ${selectedElement.styles.fontWeight === 'normal' ? 'selected' : ''}>Normal</option>
+                <option value="bold" ${selectedElement.styles.fontWeight === 'bold' ? 'selected' : ''}>Bold</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label>Border Radius</label>
+            <input type="range" class="form-range" min="0" max="50" value="${parseInt(selectedElement.styles.borderRadius)}" onchange="updateElementStyle('borderRadius', this.value + 'px')">
+        </div>
     `;
 }
 
 function updateElementStyle(property, value) {
     if (selectedElement) {
         selectedElement.styles[property] = value;
-        addToHistory(elements);
-        renderElements();
+        addToHistory(website);
+        renderWebsite();
     }
 }
 
 function deleteElement(elementId) {
-    elements = elements.filter(el => el.id !== elementId);
-    addToHistory(elements);
-    renderElements();
+    website.elements = removeElementById(website.elements, elementId);
+    addToHistory(website);
+    renderWebsite();
 }
 
-function addToHistory(newElements) {
+function removeElementById(elements, id) {
+    return elements.filter(el => {
+        if (el.id === id) {
+            return false;
+        }
+        if (el.children && el.children.length > 0) {
+            el.children = removeElementById(el.children, id);
+        }
+        return true;
+    });
+}
+
+function addToHistory(newWebsite) {
     history = history.slice(0, historyIndex + 1);
-    history.push(JSON.parse(JSON.stringify(newElements)));
+    history.push(JSON.parse(JSON.stringify(newWebsite)));
     historyIndex = history.length - 1;
     updateUndoRedoButtons();
 }
@@ -286,18 +454,16 @@ function addToHistory(newElements) {
 function undo() {
     if (historyIndex > 0) {
         historyIndex--;
-        elements = JSON.parse(JSON.stringify(history[historyIndex]));
-        renderElements();
-        updateUndoRedoButtons();
+        website = JSON.parse(JSON.stringify(history[historyIndex]));
+        renderWebsite();
     }
 }
 
 function redo() {
     if (historyIndex < history.length - 1) {
         historyIndex++;
-        elements = JSON.parse(JSON.stringify(history[historyIndex]));
-        renderElements();
-        updateUndoRedoButtons();
+        website = JSON.parse(JSON.stringify(history[historyIndex]));
+        renderWebsite();
     }
 }
 
@@ -318,9 +484,38 @@ function setViewMode(mode) {
     }
 }
 
+function changeColorScheme(e) {
+    website.colorScheme = e.target.value;
+    addToHistory(website);
+    applyColorScheme();
+}
+
+function applyColorScheme() {
+    const root = document.documentElement;
+    switch (website.colorScheme) {
+        case 'dark':
+            root.style.setProperty('--primary-color', '#3498db');
+            root.style.setProperty('--secondary-color', '#2c3e50');
+            root.style.setProperty('--background-color', '#34495e');
+            root.style.setProperty('--text-color', '#ecf0f1');
+            break;
+        case 'light':
+            root.style.setProperty('--primary-color', '#3498db');
+            root.style.setProperty('--secondary-color', '#bdc3c7');
+            root.style.setProperty('--background-color', '#ecf0f1');
+            root.style.setProperty('--text-color', '#2c3e50');
+            break;
+        default:
+            root.style.setProperty('--primary-color', '#3498db');
+            root.style.setProperty('--secondary-color', '#2ecc71');
+            root.style.setProperty('--background-color', '#ffffff');
+            root.style.setProperty('--text-color', '#2c3e50');
+    }
+}
+
 async function saveWebsite() {
     try {
-        await backend.saveWebsite(elements);
+        await backend.saveWebsite(website);
         alert('Website saved successfully!');
     } catch (error) {
         console.error('Error saving website:', error);
@@ -333,3 +528,4 @@ window.addEventListener('load', initializeBuilder);
 // Expose functions globally
 window.updateElementStyle = updateElementStyle;
 window.saveWebsite = saveWebsite;
+window.changeColorScheme = changeColorScheme;

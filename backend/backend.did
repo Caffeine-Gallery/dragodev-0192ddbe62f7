@@ -1,11 +1,19 @@
-type Website = vec Element;
+type Website = 
+ record {
+   colorScheme: text;
+   elements: vec Element;
+ };
 type ElementStyle = 
  record {
    backgroundColor: text;
+   borderRadius: text;
+   boxShadow: text;
    color: text;
    fontSize: text;
    fontStyle: text;
    fontWeight: text;
+   height: text;
+   margin: text;
    padding: text;
    textAlign: text;
    textDecoration: text;
@@ -13,6 +21,7 @@ type ElementStyle =
  };
 type Element = 
  record {
+   children: vec Element;
    content: text;
    elementType: text;
    id: text;

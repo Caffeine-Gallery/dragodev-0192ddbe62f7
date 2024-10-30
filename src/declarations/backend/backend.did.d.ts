@@ -6,20 +6,25 @@ export interface Element {
   'id' : string,
   'styles' : ElementStyle,
   'content' : string,
+  'children' : Array<Element>,
   'elementType' : string,
 }
 export interface ElementStyle {
+  'height' : string,
   'backgroundColor' : string,
+  'borderRadius' : string,
   'textDecoration' : string,
   'fontStyle' : string,
   'color' : string,
+  'boxShadow' : string,
   'fontWeight' : string,
+  'margin' : string,
   'textAlign' : string,
   'width' : string,
   'fontSize' : string,
   'padding' : string,
 }
-export type Website = Array<Element>;
+export interface Website { 'elements' : Array<Element>, 'colorScheme' : string }
 export interface _SERVICE {
   'getDefaultTemplate' : ActorMethod<[], Website>,
   'getWebsite' : ActorMethod<[bigint], [] | [Website]>,
