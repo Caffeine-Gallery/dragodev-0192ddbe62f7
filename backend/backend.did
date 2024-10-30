@@ -2,6 +2,10 @@ type Website =
  record {
    elements: vec Element;
    fonts: vec text;
+   globalStyles: record {
+                   backgroundColor: text;
+                   color: text;
+                 };
    theme: text;
  };
 type ElementStyle = 

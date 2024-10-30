@@ -36,6 +36,10 @@ actor WebsiteBuilder {
         elements : [Element];
         theme : Text;
         fonts : [Text];
+        globalStyles : {
+            backgroundColor : Text;
+            color : Text;
+        };
     };
 
     stable var websites : [Website] = [];
@@ -678,6 +682,10 @@ actor WebsiteBuilder {
         ];
         theme = "default";
         fonts = ["Arial", "Helvetica", "sans-serif"];
+        globalStyles = {
+            backgroundColor = "#ffffff";
+            color = "#333333";
+        };
     };
 
     public func saveWebsite(website : Website) : async () {

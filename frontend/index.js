@@ -28,6 +28,7 @@ async function initializeBuilder() {
     renderComponentList();
     setupEventListeners();
     await loadDefaultTemplate();
+    showColorPicker();
 }
 
 async function loadDefaultTemplate() {
@@ -38,7 +39,15 @@ async function loadDefaultTemplate() {
     } catch (error) {
         console.error('Error loading default template:', error);
         alert('Failed to load default template. Starting with an empty canvas.');
-        website = { elements: [], theme: 'default', fonts: ['Arial', 'Helvetica', 'sans-serif'] };
+        website = { 
+            elements: [], 
+            theme: 'default', 
+            fonts: ['Arial', 'Helvetica', 'sans-serif'],
+            globalStyles: {
+                backgroundColor: '#ffffff',
+                color: '#333333'
+            }
+        };
     }
 }
 
@@ -64,6 +73,7 @@ function setupEventListeners() {
     const resetBtn = document.getElementById('resetBtn');
     const themeSelect = document.getElementById('themeSelect');
     const fontSelect = document.getElementById('fontSelect');
+    const previewBtn = document.getElementById('previewBtn');
 
     componentList.addEventListener('dragstart', handleComponentDragStart);
     canvas.addEventListener('dragover', handleDragOver);
@@ -75,6 +85,7 @@ function setupEventListeners() {
     resetBtn.addEventListener('click', loadDefaultTemplate);
     themeSelect.addEventListener('change', changeTheme);
     fontSelect.addEventListener('change', changeFont);
+    previewBtn.addEventListener('click', togglePreview);
 }
 
 function handleComponentDragStart(e) {
@@ -119,8 +130,7 @@ function handleDrop(e) {
     } else if (draggedItem.type === 'element') {
         handleElementDrop(e);
     }
-    draggedItem = null;
-}
+    draggedItem = null;}
 
 function handleComponentDrop(e) {
     const newElement = createNewElement(draggedItem.id);
@@ -216,7 +226,7 @@ function createNewElement(elementType) {
             width: '100%',
             height: 'auto',
             fontSize: '16px',
-            color: '#000000',
+            color: '#333333',
             backgroundColor: '#ffffff',
             padding: '16px',
             margin: '0',
@@ -242,6 +252,7 @@ function renderWebsite() {
         canvas.appendChild(renderElement(element));
     });
     updateUndoRedoButtons();
+    applyGlobalStyles();
 }
 
 function renderElement(element) {
@@ -537,6 +548,55 @@ function applyFont() {
     document.body.style.fontFamily = website.fonts.join(', ');
 }
 
+function showColorPicker() {
+    const colorPicker = document.getElementById('colorPicker');
+    colorPicker.style.display = 'block';
+    colorPicker.innerHTML = `
+        <h4>Choose Your Color Scheme</h4>
+        <div class="mb-3">
+            <label>Background Color</label>
+            <input type="color" class="form-control" value="${website.globalStyles.backgroundColor}" onchange="updateGlobalStyle('backgroundColor', this.value)">
+        </div>
+        <div class="mb-3">
+            <label>Text Color</label>
+            <input type="color" class="form-control" value="${website.globalStyles.color}" onchange="updateGlobalStyle('color', this.value)">
+        </div>
+        <button class="btn btn-primary" onclick="applyColorScheme()">Apply Color Scheme</button>
+    `;
+}
+
+function updateGlobalStyle(property, value) {
+    website.globalStyles[property] = value;
+}
+
+function applyColorScheme() {
+    addToHistory(website);
+    applyGlobalStyles();
+    document.getElementById('colorPicker').style.display = 'none';
+}
+
+function applyGlobalStyles() {
+    const canvas = document.getElementById('canvas');
+    canvas.style.backgroundColor = website.globalStyles.backgroundColor;
+    canvas.style.color = website.globalStyles.color;
+}
+
+function togglePreview() {
+    const canvas = document.getElementById('canvas');
+    const sidebar = document.querySelector('.sidebar');
+    const styleEditor = document.getElementById('styleEditor');
+    
+    if (canvas.classList.contains('preview-mode')) {
+        canvas.classList.remove('preview-mode');
+        sidebar.style.display = 'block';
+        styleEditor.style.display = 'block';
+    } else {
+        canvas.classList.add('preview-mode');
+        sidebar.style.display = 'none';
+        styleEditor.style.display = 'none';
+    }
+}
+
 async function saveWebsite() {
     try {
         await backend.saveWebsite(website);
@@ -554,3 +614,6 @@ window.updateElementStyle = updateElementStyle;
 window.saveWebsite = saveWebsite;
 window.changeTheme = changeTheme;
 window.changeFont = changeFont;
+window.updateGlobalStyle = updateGlobalStyle;
+window.applyColorScheme = applyColorScheme;
+window.togglePreview = togglePreview;

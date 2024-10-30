@@ -26,6 +26,9 @@
                     <li class="nav-item">
                         <a class="nav-link" href="#" id="redoBtn">Redo</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="previewBtn" onclick="togglePreview()">Preview</a>
+                    </li>
                 </ul>
                 <div class="d-flex">
                     <select id="themeSelect" class="form-select me-2">
@@ -53,6 +56,7 @@
                 <button id="resetBtn" class="btn btn-warning w-100">Reset to Default</button>
             </div>
             <div class="col-md-9">
+                <div id="colorPicker" class="mb-3" style="display: none;"></div>
                 <div id="canvas" class="border rounded p-3 my-4 shadow-sm"></div>
             </div>
         </div>

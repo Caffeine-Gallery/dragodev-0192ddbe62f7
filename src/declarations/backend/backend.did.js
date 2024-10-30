@@ -31,6 +31,10 @@ export const idlFactory = ({ IDL }) => {
   const Website = IDL.Record({
     'fonts' : IDL.Vec(IDL.Text),
     'theme' : IDL.Text,
+    'globalStyles' : IDL.Record({
+      'backgroundColor' : IDL.Text,
+      'color' : IDL.Text,
+    }),
     'elements' : IDL.Vec(Element),
   });
   return IDL.Service({

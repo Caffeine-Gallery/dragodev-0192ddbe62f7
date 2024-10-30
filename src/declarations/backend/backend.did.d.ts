@@ -31,6 +31,7 @@ export interface ElementStyle {
 export interface Website {
   'fonts' : Array<string>,
   'theme' : string,
+  'globalStyles' : { 'backgroundColor' : string, 'color' : string },
   'elements' : Array<Element>,
 }
 export interface _SERVICE {
