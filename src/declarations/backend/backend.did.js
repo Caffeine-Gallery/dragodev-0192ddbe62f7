@@ -6,11 +6,15 @@ export const idlFactory = ({ IDL }) => {
     'borderRadius' : IDL.Text,
     'textDecoration' : IDL.Text,
     'fontStyle' : IDL.Text,
+    'flexDirection' : IDL.Text,
+    'justifyContent' : IDL.Text,
     'color' : IDL.Text,
+    'alignItems' : IDL.Text,
     'boxShadow' : IDL.Text,
     'fontWeight' : IDL.Text,
     'margin' : IDL.Text,
     'textAlign' : IDL.Text,
+    'display' : IDL.Text,
     'width' : IDL.Text,
     'fontSize' : IDL.Text,
     'padding' : IDL.Text,
@@ -25,8 +29,9 @@ export const idlFactory = ({ IDL }) => {
     })
   );
   const Website = IDL.Record({
+    'fonts' : IDL.Vec(IDL.Text),
+    'theme' : IDL.Text,
     'elements' : IDL.Vec(Element),
-    'colorScheme' : IDL.Text,
   });
   return IDL.Service({
     'getDefaultTemplate' : IDL.Func([], [Website], ['query']),

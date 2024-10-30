@@ -15,16 +15,24 @@ export interface ElementStyle {
   'borderRadius' : string,
   'textDecoration' : string,
   'fontStyle' : string,
+  'flexDirection' : string,
+  'justifyContent' : string,
   'color' : string,
+  'alignItems' : string,
   'boxShadow' : string,
   'fontWeight' : string,
   'margin' : string,
   'textAlign' : string,
+  'display' : string,
   'width' : string,
   'fontSize' : string,
   'padding' : string,
 }
-export interface Website { 'elements' : Array<Element>, 'colorScheme' : string }
+export interface Website {
+  'fonts' : Array<string>,
+  'theme' : string,
+  'elements' : Array<Element>,
+}
 export interface _SERVICE {
   'getDefaultTemplate' : ActorMethod<[], Website>,
   'getWebsite' : ActorMethod<[bigint], [] | [Website]>,

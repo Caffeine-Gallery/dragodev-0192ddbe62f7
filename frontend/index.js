@@ -38,7 +38,7 @@ async function loadDefaultTemplate() {
     } catch (error) {
         console.error('Error loading default template:', error);
         alert('Failed to load default template. Starting with an empty canvas.');
-        website = { elements: [], colorScheme: 'default' };
+        website = { elements: [], theme: 'default', fonts: ['Arial', 'Helvetica', 'sans-serif'] };
     }
 }
 
@@ -62,7 +62,8 @@ function setupEventListeners() {
     const desktopViewBtn = document.getElementById('desktopViewBtn');
     const mobileViewBtn = document.getElementById('mobileViewBtn');
     const resetBtn = document.getElementById('resetBtn');
-    const colorSchemeSelect = document.getElementById('colorSchemeSelect');
+    const themeSelect = document.getElementById('themeSelect');
+    const fontSelect = document.getElementById('fontSelect');
 
     componentList.addEventListener('dragstart', handleComponentDragStart);
     canvas.addEventListener('dragover', handleDragOver);
@@ -72,7 +73,8 @@ function setupEventListeners() {
     desktopViewBtn.addEventListener('click', () => setViewMode('desktop'));
     mobileViewBtn.addEventListener('click', () => setViewMode('mobile'));
     resetBtn.addEventListener('click', loadDefaultTemplate);
-    colorSchemeSelect.addEventListener('change', changeColorScheme);
+    themeSelect.addEventListener('change', changeTheme);
+    fontSelect.addEventListener('change', changeFont);
 }
 
 function handleComponentDragStart(e) {
@@ -223,7 +225,11 @@ function createNewElement(elementType) {
             fontStyle: 'normal',
             textDecoration: 'none',
             borderRadius: '0',
-            boxShadow: 'none'
+            boxShadow: 'none',
+            display: 'block',
+            flexDirection: 'row',
+            justifyContent: 'flex-start',
+            alignItems: 'stretch'
         },
         children: []
     };
@@ -415,6 +421,14 @@ function showStyleEditor() {
             <label>Border Radius</label>
             <input type="range" class="form-range" min="0" max="50" value="${parseInt(selectedElement.styles.borderRadius)}" onchange="updateElementStyle('borderRadius', this.value + 'px')">
         </div>
+        <div class="mb-3">
+            <label>Display</label>
+            <select class="form-select" onchange="updateElementStyle('display', this.value)">
+                <option value="block" ${selectedElement.styles.display === 'block' ? 'selected' : ''}>Block</option>
+                <option value="inline-block" ${selectedElement.styles.display === 'inline-block' ? 'selected' : ''}>Inline Block</option>
+                <option value="flex" ${selectedElement.styles.display === 'flex' ? 'selected' : ''}>Flex</option>
+            </select>
+        </div>
     `;
 }
 
@@ -484,15 +498,15 @@ function setViewMode(mode) {
     }
 }
 
-function changeColorScheme(e) {
-    website.colorScheme = e.target.value;
+function changeTheme(e) {
+    website.theme = e.target.value;
     addToHistory(website);
-    applyColorScheme();
+    applyTheme();
 }
 
-function applyColorScheme() {
+function applyTheme() {
     const root = document.documentElement;
-    switch (website.colorScheme) {
+    switch (website.theme) {
         case 'dark':
             root.style.setProperty('--primary-color', '#3498db');
             root.style.setProperty('--secondary-color', '#2c3e50');
@@ -513,6 +527,16 @@ function applyColorScheme() {
     }
 }
 
+function changeFont(e) {
+    website.fonts = [e.target.value, ...website.fonts.slice(1)];
+    addToHistory(website);
+    applyFont();
+}
+
+function applyFont() {
+    document.body.style.fontFamily = website.fonts.join(', ');
+}
+
 async function saveWebsite() {
     try {
         await backend.saveWebsite(website);
@@ -528,4 +552,5 @@ window.addEventListener('load', initializeBuilder);
 // Expose functions globally
 window.updateElementStyle = updateElementStyle;
 window.saveWebsite = saveWebsite;
-window.changeColorScheme = changeColorScheme;
+window.changeTheme = changeTheme;
+window.changeFont = changeFont;

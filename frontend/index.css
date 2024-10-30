@@ -12,17 +12,26 @@ body {
 }
 
 .sidebar {
-    height: 100vh;
+    height: calc(100vh - 56px);
     overflow-y: auto;
+    position: sticky;
+    top: 56px;
 }
 
 .component {
     cursor: move;
+    transition: all 0.3s ease;
+}
+
+.component:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .element {
     position: relative;
     cursor: move;
+    transition: all 0.3s ease;
 }
 
 .element:hover {
@@ -36,13 +45,15 @@ body {
 }
 
 #canvas {
-    min-height: 500px;
+    min-height: calc(100vh - 56px);
     transition: max-width 0.3s ease;
+    background-color: #f8f9fa;
 }
 
 #styleEditor {
     transition: transform 0.3s ease;
     transform: translateX(100%);
+    z-index: 1050;
 }
 
 #styleEditor.show {
@@ -69,4 +80,29 @@ body {
 .btn-primary:hover {
     background-color: var(--secondary-color);
     border-color: var(--secondary-color);
+}
+
+.navbar {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.form-range::-webkit-slider-thumb {
+    background: var(--primary-color);
+}
+
+.form-range::-moz-range-thumb {
+    background: var(--primary-color);
+}
+
+.form-range::-ms-thumb {
+    background: var(--primary-color);
+}
+
+@media (max-width: 768px) {
+    .sidebar {
+        height: auto;
+        position: static;
+    }
 }

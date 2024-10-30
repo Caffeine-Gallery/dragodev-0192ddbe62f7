@@ -1,18 +1,23 @@
 type Website = 
  record {
-   colorScheme: text;
    elements: vec Element;
+   fonts: vec text;
+   theme: text;
  };
 type ElementStyle = 
  record {
+   alignItems: text;
    backgroundColor: text;
    borderRadius: text;
    boxShadow: text;
    color: text;
+   display: text;
+   flexDirection: text;
    fontSize: text;
    fontStyle: text;
    fontWeight: text;
    height: text;
+   justifyContent: text;
    margin: text;
    padding: text;
    textAlign: text;
