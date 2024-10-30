@@ -19,9 +19,22 @@ let history = [[]];
 let historyIndex = 0;
 let viewMode = 'desktop';
 
-function initializeBuilder() {
+async function initializeBuilder() {
     renderComponentList();
     setupEventListeners();
+    await loadDefaultTemplate();
+}
+
+async function loadDefaultTemplate() {
+    try {
+        const defaultTemplate = await backend.getDefaultTemplate();
+        elements = defaultTemplate;
+        addToHistory(elements);
+        renderElements();
+    } catch (error) {
+        console.error('Error loading default template:', error);
+        alert('Failed to load default template. Starting with an empty canvas.');
+    }
 }
 
 function renderComponentList() {
@@ -43,6 +56,7 @@ function setupEventListeners() {
     const redoBtn = document.getElementById('redoBtn');
     const desktopViewBtn = document.getElementById('desktopViewBtn');
     const mobileViewBtn = document.getElementById('mobileViewBtn');
+    const resetBtn = document.getElementById('resetBtn');
 
     componentList.addEventListener('dragstart', handleComponentDragStart);
     canvas.addEventListener('dragover', handleDragOver);
@@ -51,6 +65,7 @@ function setupEventListeners() {
     redoBtn.addEventListener('click', redo);
     desktopViewBtn.addEventListener('click', () => setViewMode('desktop'));
     mobileViewBtn.addEventListener('click', () => setViewMode('mobile'));
+    resetBtn.addEventListener('click', loadDefaultTemplate);
 }
 
 function handleComponentDragStart(e) {
@@ -177,7 +192,7 @@ function renderElementContent(element) {
         case 'paragraph':
             return `<p contenteditable="true">${element.content}</p>`;
         case 'image':
-            return `<img src="https://via.placeholder.com/300x200" alt="Placeholder" style="max-width: 100%;">`;
+            return `<img src="${element.content}" alt="Image" style="max-width: 100%;">`;
         case 'button':
             return `<button class="btn btn-primary">${element.content}</button>`;
         case 'divider':

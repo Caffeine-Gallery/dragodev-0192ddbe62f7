@@ -21,6 +21,7 @@ export interface ElementStyle {
 }
 export type Website = Array<Element>;
 export interface _SERVICE {
+  'getDefaultTemplate' : ActorMethod<[], Website>,
   'getWebsite' : ActorMethod<[bigint], [] | [Website]>,
   'getWebsites' : ActorMethod<[], Array<Website>>,
   'saveWebsite' : ActorMethod<[Website], undefined>,

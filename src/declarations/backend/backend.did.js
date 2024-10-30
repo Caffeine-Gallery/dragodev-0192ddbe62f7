@@ -18,6 +18,7 @@ export const idlFactory = ({ IDL }) => {
   });
   const Website = IDL.Vec(Element);
   return IDL.Service({
+    'getDefaultTemplate' : IDL.Func([], [Website], ['query']),
     'getWebsite' : IDL.Func([IDL.Nat], [IDL.Opt(Website)], ['query']),
     'getWebsites' : IDL.Func([], [IDL.Vec(Website)], ['query']),
     'saveWebsite' : IDL.Func([Website], [], []),

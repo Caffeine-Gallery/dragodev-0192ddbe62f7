@@ -19,6 +19,7 @@ type Element =
    styles: ElementStyle;
  };
 service : {
+  getDefaultTemplate: () -> (Website) query;
   getWebsite: (nat) -> (opt Website) query;
   getWebsites: () -> (vec Website) query;
   saveWebsite: (Website) -> ();
